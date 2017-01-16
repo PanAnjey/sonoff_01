@@ -650,7 +650,8 @@ lab1:
 #ifdef USE_DEBUG
 	DEBUG_OUT.print("TEST OM310...");
 #endif
-	OM_CHK();
+	if(OM_CHK()) 	DEBUG_OUT.print("OK!");
+	else DEBUG_OUT.print("ERROR!");
 
 #endif
 	//***********************************************
