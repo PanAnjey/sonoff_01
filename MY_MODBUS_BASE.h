@@ -214,7 +214,7 @@ void MODBUS_BASE::begin(uint8_t counter_adr, uint8_t len, uint8_t *buf, uint8_t 
 	_buf_i = 0;
 	_buf_i_send = 0;
 	_status_base = 0;
-	_repeat = 1;
+	_repeat = 3;
 //	_INTPin = 0xFF;
 	_REPin = RE_Pin;
 	pinMode(_REPin, OUTPUT);
@@ -528,6 +528,7 @@ void MODBUS_BASE::dump_buf()
 //*********************************************************************************
 {
 #ifdef USE_DEBUG_MBUS
+	DEBUG_OUT.print("BUF:")
 	DEBUG_OUT.print(F(" _dev_adr = "));
 	DEBUG_OUT.print(_buf[0], HEX);
 	DEBUG_OUT.print(F(" _cmd ="));
@@ -553,6 +554,7 @@ void MODBUS_BASE::dump_buf_send()
 //*********************************************************************************
 {
 #ifdef USE_DEBUG_MBUS
+	DEBUG_OUT.println("Buf SEND:");
 	DEBUG_OUT.print(F(" _dev_adr = "));
 	DEBUG_OUT.print(_buf_send[0], HEX);
 	DEBUG_OUT.print(F(" _cmd ="));
