@@ -1,4 +1,4 @@
-//#ifdef USE_NTP
+#ifdef USE_NTP
 #include "MY_NTP.h"
 #include "MY_EEPROM.h"
 #include <TimeLib.h>
@@ -166,4 +166,4 @@ void NTPSend()
 
 }
 
-//#endif
+#endif

@@ -184,6 +184,7 @@ void MODBUS_BASE::enable()
 //*********************************************************************************
 {
 	digitalWrite(_REPin, HIGH);
+	digitalWrite(LED_BUILTIN, LOW);
 //#ifndef ARDUINO_ESP8266_NODEMCU
 //	digitalWrite(_DEPin, HIGH);
 //#endif
@@ -196,6 +197,7 @@ void MODBUS_BASE::disable()
 {
 
 	digitalWrite(_REPin, LOW);
+	digitalWrite(LED_BUILTIN, HIGH);
 //#ifndef ARDUINO_ESP8266_NODEMCU
 //	digitalWrite(_DEPin, LOW);
 //#endif
@@ -528,7 +530,7 @@ void MODBUS_BASE::dump_buf()
 //*********************************************************************************
 {
 #ifdef USE_DEBUG_MBUS
-	DEBUG_OUT.print("BUF:")
+	DEBUG_OUT.println("BUF:");
 	DEBUG_OUT.print(F(" _dev_adr = "));
 	DEBUG_OUT.print(_buf[0], HEX);
 	DEBUG_OUT.print(F(" _cmd ="));

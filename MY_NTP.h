@@ -4,7 +4,7 @@
 
 #ifndef MY_NTP_h
 #define MY_NTP_h
-
+#ifdef USE_NTP
 #include <ESP8266WiFi.h>
 //#include <WiFiUdp.h>
 
@@ -20,5 +20,5 @@ void NTPBegin(void);
 time_t NTPGet(void);
 void NTPSend();
 
-
+#endif
 #endif

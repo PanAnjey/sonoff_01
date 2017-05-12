@@ -214,7 +214,12 @@ void handleLogin()
 	HTTP_printTail(content);
 	server.send(200, "text/html", content);
 }
-
+void handleDefault()
+{
+	EC_default();
+	EC_save();
+	HTTP_handleReboot();
+}
 
 //******************************************************************************
 //  установка параметров включения/выключения вентилятора
@@ -271,8 +276,9 @@ void handleParam()
 		if (server.hasArg("HUM_ON")) MY_Config.VENT.hum_on = atoi(server.arg("HUM_ON").c_str());
 		if (server.hasArg("HUM_OFF")) MY_Config.VENT.hum_off = atoi(server.arg("HUM_OFF").c_str());
 #endif // USE_DA
-
+#ifdef USE_NTP
 		if (server.hasArg("TZ")) MY_Config.TZ = atoi(server.arg("TZ").c_str());
+#endif
 #ifdef USE_OM310
 		if (server.hasArg("OM310_adr")) MY_Config.OM310_adr = atoi(server.arg("OM310_adr").c_str());
 #endif // USE_OM310
@@ -288,7 +294,11 @@ void handleParam()
 
 	}
 	content = "";
+#ifdef USE_MERCURY
 	HTTP_printHeader(content, "Конфигурация контроллера MERC", "");
+#else
+	HTTP_printHeader(content, "Конфигурация контроллера A108", "");
+#endif
 	content += "<ul>\
      <li><a href=\"/\">Главная</a>\
      <li><a href=\"/reboot\">Перезагрузка</a>\
@@ -309,7 +319,9 @@ void handleParam()
 	//HTTP_printInput_mac(content, ".", "MAC3", MY_Config.MAC[3], 3, 0);
 	//HTTP_printInput_mac(content, ".", "MAC4", MY_Config.MAC[4], 3, 0);
 	//HTTP_printInput_mac(content, ".", "MAC5", MY_Config.MAC[5], 3, 0);
+#ifdef USE_NTP
 	HTTP_printInput(content, "Временная зона", "TZ", MY_Config.TZ, WD, 0);
+#endif
 #ifdef USE_DA
 	HTTP_printInput(content, "Вент. % включение", "HUM_ON", MY_Config.VENT.hum_on, WD, 0);
 	HTTP_printInput(content, "Вент. % выключение", "HUM_OFF", MY_Config.VENT.hum_off, WD, 0);
@@ -330,6 +342,9 @@ void handleParam()
 	//#endif
 	content += "<input type = 'submit' name = 'SUBMIT' value = 'Сохранить'>";
 	content += "</form>\n";
+	content += "<form action='/setdef' method='POST'>";
+	content += "<input type = 'submit' name = 'SUBMIT' value = 'Уст. по умолчанию'>";
+	content += "</form>\n";
 	HTTP_printTail(content);
 	server.send(200, "text/html", content);
 }
@@ -346,6 +361,17 @@ void HTTP_handleReboot(void)
 	server.send(200, "text/html", out);
 	//  ((void(*)(void))0x40000080)();
 	  ESP.reset();  
+}
+
+void handle_ON(void)
+{
+	digitalWrite(PIN_RELAY, HIGH);
+	handleRoot();
+}
+void handle_OFF(void)
+{
+	digitalWrite(PIN_RELAY, LOW);
+	handleRoot();
 }
 //********************************************************************************
 //Основная страница
@@ -425,26 +451,7 @@ void handleRoot()
 	sprintf(str_data, "<h3>Дата:%02u.%02u.%04u %02u:%02u:%02u</h3>", \
 		tt.Day, tt.Month, tmYearToCalendar(tt.Year), tt.Hour, tt.Minute, tt.Second);
 	content += str_data;
-	//server.sendContent(content);
-//	server.sendContent(content);
-
-//	if (server.hasHeader("User-Agent")) 
-//	{
-//		content += "the user agent used is : " + server.header("User-Agent") + "<br><br>";
-//#ifdef USE_DEBUG
-//		DEBUG_OUT.print("User-Agent:");
-//		DEBUG_OUT.println(server.header("User-Agent"));
-//
-//
-//#endif
-//	}
-	//int pn = server.headers();
-	//for (size_t i = 0; i < pn; i++)
-	//{
-	//	content += "<br> Header name:" + server.headerName(i);
-	//	content += ":&nbsp" + server.header(i);
-	//}
-	//content += "<br> Host header:" + server.hostHeader();
+	content += "<h3><a href=\"/seton\">Включить</a></h3><h3><a href=\"/setoff\">Выключить</a></h3>";
 	content += "<br><a href=\"/setparam\">Настройка параметров</a></body></html>";
 	server.send(200, "text/html", content);
 }
@@ -478,13 +485,13 @@ void setup()
 	pinMode(PIN_RELAY, OUTPUT);
 	pinMode(PIN_LED2, OUTPUT);
 
+	pinMode(LED_BUILTIN, OUTPUT);
+
 	//relay_on = !relay_on;
 	digitalWrite(PIN_RELAY, relay_on);
-	digitalWrite(PIN_LED2, wifi_enable);
+//	digitalWrite(PIN_LED2, wifi_enable);
+	digitalWrite(LED_BUILTIN, HIGH);
 	delay(5000);
-#ifdef USE_DEBUG
-	DEBUG_OUT.begin(115200);// Последовательный порт для отладки
-#endif
 	//***************************************************************************
 	// Инициализация MBUS
 	//***************************************************************************
@@ -495,7 +502,11 @@ void setup()
 	Mbus.init_buf(MAX_RESPONSE_LENGTH);
 	RS485.begin(9600);
 	//	DEBUG_OUT << F("MODBUS init OK\n");
-	Serial.swap();
+	delay(10);
+	RS485.swap();
+#endif
+#ifdef USE_DEBUG
+	DEBUG_OUT.begin(115200);// Последовательный порт для отладки
 #endif
 	//************************************************
 	//инициализация конфигурации
@@ -510,6 +521,8 @@ void setup()
 	//***********************************************
 #ifdef USE_WIFI_CLIENT
 	wifi_set_macaddr(STATION_IF, MY_Config.MAC);
+	wifi_set_macaddr(SOFTAP_IF, MY_Config.MAC);
+
 #ifdef USE_DEBUG
 	DEBUG_OUT.printf("\nConnecting to: %s/%s\n", MY_Config.STA_SSID, MY_Config.STA_PASS);
 	DEBUG_OUT.print("MAC: ");	DEBUG_OUT.println(WiFi.macAddress());
@@ -587,10 +600,16 @@ void setup()
 	wifi_enable = false;
 #endif
 lab1:
+	//**************************************************************************************************
+	// описания страниц
+	//**************************************************************************************************
 #ifdef USE_WEBSERVER
 	server.on("/", handleRoot);
 	server.on("/login", handleLogin);
 	server.on("/setparam", handleParam);
+	server.on("/setdef", handleDefault);
+	server.on("/seton", handle_ON);
+	server.on("/setoff", handle_OFF);
 	server.on("/reboot", HTTP_handleReboot);
 	//{
 	//	server.send(200, "text/plain", "this works without need of authentification");
@@ -652,7 +671,7 @@ lab1:
 #endif
 	if(OM_CHK()) 	DEBUG_OUT.print("OK!");
 	else DEBUG_OUT.print("ERROR!");
-
+	// 01, 08,00,00,00,07,a1,c9
 #endif
 	//***********************************************
 	//**********************************************
@@ -895,6 +914,7 @@ void loop()
 	//***********************************************************************
 	//синхронизация времени
 	//***********************************************************************
+#ifdef USE_NTP
 	if ((now() >= next_ntp) && !send_NTP)// если не посылали пакет
 	{
 
@@ -932,5 +952,5 @@ void loop()
 
 	}
 
-
+#endif
 }

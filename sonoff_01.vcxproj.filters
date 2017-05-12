@@ -63,6 +63,9 @@
     <ClInclude Include="MY_MODBUS_DEF.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WC_EEPROM.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DHT.cpp">
@@ -75,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MY_EEPROM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WC_EEPROM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

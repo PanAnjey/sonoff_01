@@ -5,8 +5,8 @@
 //*******************************************************************************
 // используемые модули
 //*******************************************************************************
-//#define MODUL_TYP A108
-#define MODUL_TYP MODBUS
+#define MODUL_TYP A108
+//#define MODUL_TYP MODBUS
 
 #if MODUL_TYP == A108
 #undef USE_MERCURY
@@ -15,12 +15,12 @@
 #define USE_DHT
 #endif
 
-#if MODUL_TYP == MODBUS
-//#define USE_MERCURY			//Мкеркурий 230
-#define USE_OM310			//ОМ-310
-#define USE_MBUS
-#undef USE_DHT
-#endif
+//#if MODUL_TYP == MODBUS
+////#define USE_MERCURY			//Мкеркурий 230
+//#define USE_OM310			//ОМ-310
+//#define USE_MBUS
+//#undef USE_DHT
+//#endif
 
 
 
@@ -30,7 +30,7 @@
 
 
 //#define USE_MQTT
-#define USE_NTP
+//#define USE_NTP
 #define NTP_interval (time_t)SECS_PER_HOUR
 //
 
@@ -92,10 +92,12 @@ struct VENT_PARAM	//параметры включения/выключения �
 #define AP_SSID_NAME "A108"
 #define AP_SSID_PASS "serayakrysa89"
 #endif
-#if MODUL_TYP == MODBUS
+/*
+#if MODUL_TYP = MODBUS
 #define AP_SSID_NAME "Mercury01"
 #define AP_SSID_PASS "serayakrysa89"
 #endif
+*/
 #endif
 
 #ifdef USE_MQTT
